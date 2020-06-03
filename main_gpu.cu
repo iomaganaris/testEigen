@@ -14,7 +14,7 @@ void runPartialPivLuGPU(double* m, double* v, double* s, int n){
     int stride = blockDim.x * gridDim.x;
     printf("v in device\n");
     for (int i = index; i < n; i += stride) {
-        printf("%lf\n", v[i]);
+        printf("v[%d] = %lf\n", i, v[i]);
     }
     typedef Eigen::Map<Eigen::MatrixXd> MapperMatrix;
     MapperMatrix m_(m, n, n);
@@ -61,17 +61,30 @@ int main()
 
     //MatrixXd m_device = MatrixXd::Random(n, n);
     //VectorXd v_device = VectorXd::Random(n);
+    double *m_device, *v_device, *s_device;
+    cudaMallocManaged(&m_device, n*n*sizeof(double));
+    cudaMallocManaged(&v_device, n*sizeof(double));
+    cudaMallocManaged(&s_device, n*sizeof(double));
     VectorXd s2 = VectorXd::Random(n);
-    double* m_device = m.data();
-    double* v_device = v.data();
+    //m_device = m.data();
+    //v_device = v.data();
+    /*cout << "v_device data:" << endl;
+    for(int i = 0; i < n; ++i) {
+        cout << v_device[i] << endl;
+    }*/
+    //s_device = s2.data();
+    for(int i = 0; i < n*n; ++i) {
+        m_device[i] = m.data()[i];
+    }
+    for(int i = 0; i < n; ++i) {
+        v_device[i] = v.data()[i];
+        s_device[i] = s2.data()[i];
+    }
+
     cout << "v_device data:" << endl;
     for(int i = 0; i < n; ++i) {
         cout << v_device[i] << endl;
     }
-    double* s_device = s2.data();
-    cudaMallocManaged(&m_device, n*n*sizeof(double));
-    cudaMallocManaged(&v_device, n*sizeof(double));
-    cudaMallocManaged(&s_device, n*sizeof(double));
 
     cudaError_t runPartialPivLuGPUError = cudaGetLastError();
     if(runPartialPivLuGPUError != cudaSuccess) {
